@@ -1,0 +1,46 @@
+# .bashrc
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+    . /etc/bashrc
+fi
+
+# Load modules
+
+# export SYSTEMD_PAGER=
+
+# User specific aliases and functions
+alias ls='ls --color'
+alias lh='ls -lh'
+alias rm='rm -i'
+alias py='python3'
+alias cl='clear'
+alias vrc='vim ~/.bashrc'
+alias src='source ~/.bashrc'
+alias cds='cd $SCRATCH'
+alias see='tail -f'
+alias sout='tail -f *out'
+alias tm='tmux -S ~/.tmux/shared_socket new-session -s mysession'
+alias tma='tmux -S ~/.tmux/shared_socket attach -t mysession'
+alias mc='make clean'
+alias m='make'
+alias md='module'
+alias mdl='module load'
+alias qstat='squeue -u zfzheng'
+alias qnum='squeue | grep -n zfzheng'
+
+PS1='\[\033[01;35;1m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\W\[\033[00m\]\$ '
+
+send(){
+    tar -czvf usc.tgz $@
+    scp -r usc.tgz zzf@114.214.203.99:
+    rm -f usc.tgz
+    # cp $@ ~/tempfigs/
+}
+
+slc(){
+    param1=${1:-"1"}
+    param2=${2:-"04:00:00"}
+    param3=${3:-"cpu"}
+    salloc --nodes $param1 --qos interactive --time $param2 --constraint $param3
+}
