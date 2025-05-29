@@ -28,6 +28,7 @@ alias md='module'
 alias mdl='module load'
 alias qstat='squeue -u zfzheng'
 alias qnum='squeue | grep -n zfzheng'
+alias rsy='rsync -av --max-size=100M'
 
 PS1='\[\033[01;35;1m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\W\[\033[00m\]\$ '
 
@@ -44,3 +45,13 @@ slc(){
     param3=${3:-"cpu"}
     salloc --nodes $param1 --qos interactive --time $param2 --constraint $param3
 }
+
+# delete large files
+rml()
+{
+    param1=${1:-"./"}
+    param2=${2:-"100M"}
+    find $param1 -type f -size +$param2 -delete
+}
+
+
