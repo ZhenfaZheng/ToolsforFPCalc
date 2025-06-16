@@ -1,0 +1,78 @@
+#!/bin/bash
+#SBATCH -J test
+#SBATCH -N 16
+#SBATCH --ntasks-per-node 56
+#SBATCH -p development
+#SBATCH -t 02:00:00
+##SBATCH -p flex
+##SBATCH -p normal
+##SBATCH -t 48:00:00
+#SBATCH -A DMR22042
+
+module load arpack impi intel/19.1.1 phdf5
+export PATH=/home1/09917/zfzheng/software/BerkeleyGW/bin:$PATH
+
+NQ=3
+
+# back up the data files.
+mv epc.h5 epc_backup.h5
+for iq in `seq 1 $NQ`
+do
+    cd bse_$iq
+    mv kernel.h5 kernel_${iq}.h5
+    cd ..
+done
+
+NNODES_SHARE=4
+mkdir -p Data
+for inode in `seq 1 $SLURM_JOB_NUM_NODES`
+do
+    echo
+    echo "Link data files to node-${inode} local tmp directory."
+
+    jnode=$((($inode-1) / $NNODES_SHARE + 1))
+    mkdir -p Data/node-${jnode}
+    echo $inode $jnode
+
+    Data_Full_Path=$(cd Data/node-${jnode} && pwd)
+    OFFSET=$(( ($inode-1) * $SLURM_NTASKS_PER_NODE ))
+
+    if (($inode % $NNODES_SHARE == 1)); then
+        file_count=$(ls -1 $Data_Full_Path | wc -l)
+        if (($file_count < ($NQ+1) )); then
+            echo "Copy data files to Data/node-${inode} directory."
+            ibrun -n 1 -o $OFFSET cp -L epc_backup.h5 $Data_Full_Path/epc.h5
+            ibrun -n 1 -o $OFFSET cp -L bse_*/kernel_*.h5 $Data_Full_Path/
+        fi
+    fi
+
+    ibrun -n 1 -o $OFFSET ln -sf $Data_Full_Path/* /tmp/
+done
+
+# link the data files from local /tmp dirctory.
+ln -sf /tmp/epc.h5 .
+for iq in `seq 1 $NQ`
+do
+    cd bse_$iq
+    ln -sf /tmp/kernel_${iq}.h5 kernel.h5
+    cd ..
+done
+
+
+JOB=dynamics
+EXE=dynamics.x
+
+ibrun $EXE > $JOB.out
+
+
+# recover the data files.
+unlink epc.h5
+mv epc_backup.h5 epc.h5
+for iq in `seq 1 $NQ`
+do
+    cd bse_$iq
+    unlink kernel.h5
+    mv kernel_${iq}.h5 kernel.h5
+    cd ..
+done
+
