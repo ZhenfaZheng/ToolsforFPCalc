@@ -17,6 +17,7 @@ alias py='python3'
 alias cl='clear'
 alias vrc='vim ~/.bashrc'
 alias src='source ~/.bashrc'
+alias sl='ls'
 alias cds='cd $SCRATCH'
 alias see='tail -f'
 alias sout='tail -f *out'
@@ -53,5 +54,16 @@ rml()
     param2=${2:-"100M"}
     find $param1 -type f -size +$param2 -delete
 }
+# Add auto completion configure for slurm system.
+_slurm_job_ids() {
+    local cur
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    local job_ids=$(squeue -h -o "%i" -u $USER 2>/dev/null)
+    COMPREPLY=( $(compgen -W "${job_ids}" -- ${cur}) )
+    return 0
+}
+complete -F _slurm_job_ids scancel
+
 
 
